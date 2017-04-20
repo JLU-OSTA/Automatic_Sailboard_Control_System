@@ -1,0 +1,84 @@
+C51 COMPILER V9.00   MCU_CLK                                                               04/04/2017 15:27:12 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MCU_CLK
+OBJECT MODULE PLACED IN mcu_clk.OBJ
+COMPILER INVOKED BY: E:\Keil\C51\BIN\C51.EXE mcu_clk.c COMPACT OMF2 BROWSE DEBUG
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include <intrins.h>
+   3          #define step 1
+   4          #define all 333
+   5          
+   6          int pwm;
+   7          sbit out=P1^0;
+   8          sbit ad=P2^1;
+   9          sbit su=P2^0;
+  10          
+  11          void delay();
+  12          
+  13          int main()
+  14          {
+  15   1          int i;
+  16   1      
+  17   1          pwm=all/2;
+  18   1      
+  19   1          P2=0xFF;
+  20   1          P1=0x00;
+  21   1          out=1;
+  22   1          delay();
+  23   1          out=0;
+  24   1          while(1)
+  25   1          {
+  26   2              if(~ad&&(pwm<all-step))
+  27   2                  pwm+=step;
+  28   2              out=1;
+  29   2              for(i=0;i<pwm;i++)
+  30   2                  ;
+  31   2              if(~su&&(pwm>=step))
+  32   2                  pwm-=step;
+  33   2              out=0;
+  34   2              for(i=0;i<(all-pwm);i++)
+  35   2                  ;
+  36   2          }
+  37   1      
+  38   1      }
+  39          
+  40          void delay() //1s
+  41          {
+  42   1              unsigned char i, j, k;
+  43   1      
+  44   1              _nop_();
+  45   1              i = 15;
+  46   1              j = 2;
+  47   1              k = 235;
+  48   1              do
+  49   1              {
+  50   2                      do
+  51   2                      {
+  52   3                              while (--k);
+  53   3                      } while (--j);
+  54   2              } while (--i);
+  55   1      }
+C51 COMPILER V9.00   MCU_CLK                                                               04/04/2017 15:27:12 PAGE 2   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    193    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =      2       2
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

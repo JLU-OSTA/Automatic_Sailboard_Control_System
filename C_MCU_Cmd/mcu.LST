@@ -1,0 +1,217 @@
+C51 COMPILER V9.00   MCU                                                                   04/04/2017 15:12:26 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MCU
+OBJECT MODULE PLACED IN mcu.OBJ
+COMPILER INVOKED BY: E:\Keil\C51\BIN\C51.EXE mcu.c COMPACT OMF2 BROWSE DEBUG
+
+line level    source
+
+   1          #include <stc89c5xrc.h>
+   2          #include <intrins.h>
+   3          #include <string.h>
+   4          
+   5          #define FOSC 22118400L
+   6          #define BAUD 19200
+   7          #define P1_init ~0xFF
+   8          
+   9          bit busy;
+  10          int flag=0;
+  11          int iloop=0;
+  12          char ram[10]=0;
+  13          char command=0;
+  14          int step_motor[8]={0x01,0x03,0x02,0x06,0x04,0x0c,0x08,0x09};
+  15          
+  16          void SendData(unsigned char dat);
+  17          void SendString(char *s);
+  18          void terminal();
+  19          unsigned int strtonum(unsigned char inputstr);
+  20          void forward();
+  21          void back();
+  22          void delay();
+  23          void wait();
+  24          
+  25          sbit ad=P2^1;
+  26          sbit su=P2^0;
+  27          
+  28          void main()
+  29          {
+  30   1          P1=P1_init;
+  31   1          P2=0xFF;
+  32   1          SCON = 0xda;
+  33   1          TMOD = 0x20;
+  34   1          ISP_CMD=0x00;
+  35   1          ISP_CONTR|=0x81;
+  36   1          ISP_TRIG=0x46;
+  37   1          ISP_TRIG=0xb9;
+  38   1          TH1 = TL1 = -(FOSC/12/32/BAUD);
+  39   1          TR1 = 1;
+  40   1          ES = 1;
+  41   1          EA = 1;
+  42   1      
+  43   1          while(1)
+  44   1              {
+  45   2                      terminal();
+  46   2              }
+  47   1      }
+  48          
+  49          void Uart_Isr() interrupt 4 using 1
+  50          {
+  51   1          if (RI)
+  52   1          {
+  53   2              RI = 0;
+  54   2              command=SBUF;
+  55   2              flag=1;
+C51 COMPILER V9.00   MCU                                                                   04/04/2017 15:12:26 PAGE 2   
+
+  56   2          }
+  57   1          if (TI)
+  58   1          {
+  59   2              TI = 0;
+  60   2              busy=0;
+  61   2          }
+  62   1      }
+  63          
+  64          void SendData(unsigned char dat)
+  65          {
+  66   1              while(busy)
+  67   1          ACC = dat;
+  68   1          if (P)
+  69   1          {
+  70   2              TB8 = 1;
+  71   2          }
+  72   1          else
+  73   1          {
+  74   2              TB8 = 0;
+  75   2          }
+  76   1              busy=1;
+  77   1          SBUF = ACC;
+  78   1      }
+  79          
+  80          void SendString(char *s)
+  81          {
+  82   1          while (*s)
+  83   1          {
+  84   2              SendData(*s++);
+  85   2          }
+  86   1      }
+  87          
+  88          void terminal()
+  89          {
+  90   1              char temp[2]=0;
+  91   1          if(flag)
+  92   1          {
+  93   2              temp[0]=1;
+  94   2              if(command=='R')
+  95   2              {
+  96   3                  SendString("O");
+  97   3              }
+  98   2              else if(command == 'B')
+  99   2              {
+ 100   3                  EA=0;
+ 101   3                              forward();
+ 102   3                              EA=1;
+ 103   3              }
+ 104   2              else if(command == 'F')
+ 105   2              {
+ 106   3                  EA=0;
+ 107   3                  back();
+ 108   3                  EA=1;
+ 109   3              }
+ 110   2              else if(command == 'A')
+ 111   2              {
+ 112   3                  SendString("add\n");
+ 113   3                  EA=0;
+ 114   3                  ad=0;
+ 115   3                  wait();
+ 116   3                  ad=1;
+ 117   3                  EA=1;
+C51 COMPILER V9.00   MCU                                                                   04/04/2017 15:12:26 PAGE 3   
+
+ 118   3              }
+ 119   2              else if(command == 'S')
+ 120   2              {
+ 121   3                  SendString("sub\n");
+ 122   3                  EA=0;
+ 123   3                  su=0;
+ 124   3                  wait();
+ 125   3                  su=1;
+ 126   3                  EA=1;
+ 127   3              }
+ 128   2              else
+ 129   2              {
+ 130   3                  ;
+ 131   3              }
+ 132   2              flag=0;
+ 133   2          }
+ 134   1      }
+ 135          
+ 136          void forward()
+ 137          {
+ 138   1          int i,j;
+ 139   1          for(j=0;j<10;j++)
+ 140   1          for(i=0;i<8;i++)
+ 141   1          {
+ 142   2              P1=~step_motor[i];
+ 143   2              delay();
+ 144   2          }
+ 145   1          P1=P1_init;
+ 146   1      }
+ 147          
+ 148          void back()
+ 149          {
+ 150   1          int i,j;
+ 151   1          for(j=0;j<10;j++)
+ 152   1          for(i=7;i>=0;i--)
+ 153   1          {
+ 154   2              P1=~step_motor[i];
+ 155   2              delay();
+ 156   2          }
+ 157   1          P1=P1_init;
+ 158   1      }
+ 159          
+ 160          void delay()  //1.5ms
+ 161          {
+ 162   1              unsigned char i, j;
+ 163   1      
+ 164   1              i = 6;
+ 165   1              j = 93;
+ 166   1              do
+ 167   1              {
+ 168   2                      while (--j);
+ 169   2              } while (--i);
+ 170   1      }
+ 171          
+ 172          void wait()       //10ms
+ 173          {
+ 174   1              unsigned char i, j;
+ 175   1      
+ 176   1              i = 18;
+ 177   1              j = 235;
+ 178   1              do
+ 179   1              {
+C51 COMPILER V9.00   MCU                                                                   04/04/2017 15:12:26 PAGE 4   
+
+ 180   2                      while (--j);
+ 181   2              } while (--i);
+ 182   1      }
+ 183          
+ 184          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    466    ----
+   CONSTANT SIZE    =     14    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =     31      13
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

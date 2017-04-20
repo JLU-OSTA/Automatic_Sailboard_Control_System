@@ -1,0 +1,4 @@
+"STARTUP.obj",
+"mcu_clk.obj" 
+TO "mcu_clock" 
+

@@ -1,0 +1,4 @@
+"STARTUP.obj",
+"mcu.obj" 
+TO "MCU" 
+
